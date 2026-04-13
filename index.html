@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>판촉물 입출고 관리 대장</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --accent: #1D9E75;
+  --accent-light: #E1F5EE;
+  --accent-dark: #085041;
+  --accent-mid: #0F6E56;
+  --danger: #E24B4A;
+  --danger-light: #FCEBEB;
+  --warn: #EF9F27;
+  --warn-light: #FAEEDA;
+  --warn-dark: #854F0B;
+  --blue: #378ADD;
+  --blue-light: #E6F1FB;
+  --blue-dark: #0C447C;
+  --bg: #F7F8F5;
+  --surface: #FFFFFF;
+  --surface2: #F1F0EC;
+  --border: #E2E1DC;
+  --border-strong: #CACAC0;
+  --text: #1C1C1A;
+  --text-muted: #6B6B64;
+  --text-hint: #A0A099;
+  --font: 'Noto Sans KR', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+html { font-size: 15px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ─── Header ─── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; align-items: center; gap: 16px;
+  height: 58px;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 15px; color: var(--text);
+  text-decoration: none;
+}
+.logo-mark {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+}
+.logo-mark svg { width: 18px; height: 18px; }
+.header-sub { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.header-date { font-size: 13px; color: var(--text-muted); font-family: var(--mono); }
+
+/* ─── Tabs ─── */
+.tab-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+.tab-nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 2px;
+}
+.tab-btn {
+  padding: 13px 20px; font-size: 14px; font-weight: 500;
+  border: none; background: none; cursor: pointer;
+  color: var(--text-muted); border-bottom: 2px solid transparent;
+  transition: all 0.18s; white-space: nowrap;
+  display: flex; align-items: center; gap: 7px;
+}
+.tab-btn .tab-icon { font-size: 16px; }
+.tab-btn.active { color: var(--accent-mid); border-bottom-color: var(--accent); }
+.tab-btn:hover:not(.active) { color: var(--text); }
+
+/* ─── Layout ─── */
+.main {
+  max-width: 960px; margin: 0 auto;
+  padding: 24px 24px 48px;
+}
+.tab-pane { display: none; animation: fadeIn 0.18s ease; }
+.tab-pane.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── Stat Cards ─── */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.02em; }
+.stat-val { font-size: 26px; font-weight: 700; font-family: var(--mono); }
+.stat-val.green { color: var(--accent-mid); }
+.stat-val.red { color: var(--danger); }
+.stat-val.blue { color: var(--blue-dark); }
+.stat-val.warn { color: var(--warn-dark); }
+
+/* ─── Section ─── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 24px 0 12px;
+}
+.section-title {
+  font-size: 13px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+/* ─── Toolbar ─── */
+.toolbar {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.search-input {
+  flex: 1; min-width: 200px; padding: 9px 13px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: var(--font); font-size: 14px; background: var(--surface);
+  color: var(--text); outline: none; transition: border 0.15s;
+}
+.search-input:focus { border-color: var(--accent); }
+.btn {
+  padding: 9px 16px; border-radius: var(--radius); font-size: 13px;
+  font-weight: 500; cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); display: flex;
+  align-items: center; gap: 6px; white-space: nowrap; transition: all 0.15s;
+  font-family: var(--font);
+}
+.btn:hover { background: var(--surface2); }
+.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-accent:hover { background: var(--accent-mid); border-color: var(--accent-mid); }
+.btn-green { background: var(--accent-light); color: var(--accent-mid); border-color: #9FE1CB; }
+.btn-green:hover { background: #C5EDE0; }
+.btn-excel { background: #1D6F42; color: #fff; border-color: #1D6F42; }
+.btn-excel:hover { background: #155232; }
+.btn-danger { background: var(--danger-light); color: var(--danger); border-color: #F7C1C1; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-del {
+  padding: 3px 10px; font-size: 12px; font-weight: 500;
+  border: 1px solid #F7C1C1; border-radius: 6px; cursor: pointer;
+  background: var(--danger-light); color: var(--danger);
+  font-family: var(--font); transition: all 0.15s; white-space: nowrap;
+}
+.btn-del:hover { background: #F7C1C1; }
+
+/* ─── Table ─── */
+.table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table thead tr { background: var(--surface2); }
+.data-table th {
+  padding: 11px 14px; text-align: left; font-size: 12px; font-weight: 700;
+  color: var(--text-muted); letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+}
+.data-table th.r, .data-table td.r { text-align: right; }
+.data-table th.c, .data-table td.c { text-align: center; }
+.data-table td {
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: #FAFAF7; }
+.data-table .mono { font-family: var(--mono); font-size: 13px; }
+
+/* ─── Badges ─── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 500;
+}
+.badge-ok { background: var(--accent-light); color: var(--accent-mid); }
+.badge-low { background: var(--warn-light); color: var(--warn-dark); }
+.badge-out { background: var(--danger-light); color: var(--danger); }
+
+/* ─── Form Card ─── */
+.form-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 22px 24px;
+  margin-bottom: 16px; box-shadow: var(--shadow-sm);
+}
+.form-card-title {
+  font-size: 15px; font-weight: 700; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.form-card-title .dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.dot-green { background: var(--accent); }
+.dot-red { background: var(--danger); }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.span2 { grid-column: span 2; }
+.form-group.span3 { grid-column: span 3; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.02em; }
+.form-input, .form-select, .form-textarea {
+  padding: 9px 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); font-family: var(--font); font-size: 14px;
+  background: var(--surface); color: var(--text); outline: none; transition: border 0.15s;
+  width: 100%;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-textarea { resize: vertical; min-height: 60px; }
+.form-actions {
+  display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px;
+  padding-top: 16px; border-top: 1px solid var(--border);
+}
+
+/* ─── Alert ─── */
+.alert {
+  padding: 10px 14px; border-radius: var(--radius); font-size: 13px;
+  display: none; margin-top: 10px; align-items: center; gap: 8px;
+}
+.alert.show { display: flex; }
+.alert-warn { background: var(--warn-light); color: var(--warn-dark); border: 1px solid #FAC775; }
+.alert-danger { background: var(--danger-light); color: var(--danger); border: 1px solid #F7C1C1; }
+.alert-success { background: var(--accent-light); color: var(--accent-mid); border: 1px solid #9FE1CB; }
+
+/* ─── Log ─── */
+.log-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.log-row:last-child { border-bottom: none; }
+.log-icon {
+  width: 34px; height: 34px; border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; flex-shrink: 0;
+}
+.log-icon.in { background: var(--accent-light); color: var(--accent-mid); }
+.log-icon.out { background: var(--danger-light); color: var(--danger); }
+.log-info { flex: 1; }
+.log-name { font-size: 14px; font-weight: 500; }
+.log-meta { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.log-qty { font-family: var(--mono); font-weight: 700; font-size: 15px; }
+.log-qty.in { color: var(--accent-mid); }
+.log-qty.out { color: var(--danger); }
+
+/* ─── Toast ─── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: #1C1C1A; color: #fff; padding: 12px 20px;
+  border-radius: var(--radius); font-size: 14px; font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  opacity: 0; transform: translateY(8px); transition: all 0.25s;
+  pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ─── Empty ─── */
+.empty-row td {
+  text-align: center; padding: 32px; color: var(--text-muted); font-size: 14px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 700px) {
+  .main { padding: 16px 16px 40px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .form-group.span3 { grid-column: span 2; }
+  .tab-btn { padding: 12px 14px; font-size: 13px; }
+  .tab-btn .tab-icon { display: none; }
+  .header-sub { display: none; }
+  .data-table { font-size: 13px; }
+  .data-table th, .data-table td { padding: 9px 10px; }
+}
+@media (max-width: 480px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.span2, .form-group.span3 { grid-column: span 1; }
+  .toolbar { flex-direction: column; }
+  .search-input { min-width: unset; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-mark">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.9"/>
+          <rect x="10" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="2" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="10" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.9"/>
+        </svg>
+      </div>
+      판촉물 관리
+    </a>
+    <span class="header-sub">입출고 대장</span>
+    <div class="header-right">
+      <span class="header-date" id="header-date"></span>
+      <div id="sync-status" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);">
+        <span id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text-hint);flex-shrink:0;"></span>
+        <span id="sync-text">연결 확인 중...</span>
+      </div>
+      <button class="btn btn-sm" onclick="loadFromSheets(true)" id="btn-refresh" style="display:none">↻ 새로고침</button>
+    </div>
+  </div>
+</header>
+
+<!-- Tab Nav -->
+<nav class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="switchTab('status', this)">
+      <span class="tab-icon">📦</span> 판촉물 현황
+    </button>
+    <button class="tab-btn" onclick="switchTab('inbound', this)">
+      <span class="tab-icon">📥</span> 입고 대장
+    </button>
+    <button class="tab-btn" onclick="switchTab('outbound', this)">
+      <span class="tab-icon">📤</span> 출고 대장
+    </button>
+  </div>
+</nav>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- ── TAB 1: 현황 ── -->
+  <div id="pane-status" class="tab-pane active">
+    <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="stat-card">
+        <div class="stat-label">총 품목 수</div>
+        <div class="stat-val blue" id="s-total-items">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">이달 총 입고</div>
+        <div class="stat-val green" id="s-month-in">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">이달 총 출고</div>
+        <div class="stat-val red" id="s-month-out">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">잔여 현황 (총 재고)</div>
+        <div class="stat-val blue" id="s-remaining">0</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input class="search-input" type="text" placeholder="품목명 검색..." oninput="filterInventory(this.value)" />
+      <button class="btn btn-excel" onclick="exportExcel('all')">
+        ⬇ 전체 엑셀 다운로드
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>품목명</th>
+            <th class="r">현재 재고</th>
+            <th class="r">이달 입고</th>
+            <th class="r">이달 출고</th>
+          </tr>
+        </thead>
+        <tbody id="inventory-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-header" style="margin-top:28px;">
+      <span class="section-title">재고 마감 품목</span>
+      <span id="sold-out-count" style="font-size:12px;color:var(--danger);font-weight:600;background:var(--danger-light);padding:3px 10px;border-radius:99px;">0개</span>
+    </div>
+    <div class="table-wrap" id="sold-out-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>품목명</th>
+            <th class="r">누적 입고</th>
+            <th class="r">누적 출고</th>
+            <th>마감일</th>
+          </tr>
+        </thead>
+        <tbody id="soldout-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-header" style="margin-top:28px;">
+      <span class="section-title">최근 입출고 기록</span>
+    </div>
+    <div class="table-wrap" style="padding: 4px 16px;">
+      <div id="recent-logs"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB 2: 입고 ── -->
+  <div id="pane-inbound" class="tab-pane">
+    <div class="form-card">
+      <div class="form-card-title">
+        <span class="dot dot-green"></span> 입고 정보 입력
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">입고일자 *</label>
+          <input class="form-input" type="date" id="in-date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">품목명 *</label>
+          <input class="form-input" type="text" id="in-item" placeholder="예: 볼펜 (로고)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">입고 수량 *</label>
+          <input class="form-input" type="number" id="in-qty" placeholder="0" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">단가 (원)</label>
+          <input class="form-input" type="number" id="in-price" placeholder="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">담당자</label>
+          <input class="form-input" type="text" id="in-manager" placeholder="담당자명" />
+        </div>
+        <div class="form-group span3">
+          <label class="form-label">비고</label>
+          <input class="form-input" type="text" id="in-note" placeholder="특이사항 입력..." />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="clearForm('in')">초기화</button>
+        <button class="btn btn-accent" onclick="submitInbound()">입고 등록</button>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">입고 내역</span>
+      <button class="btn btn-excel btn-sm" onclick="exportExcel('inbound')">⬇ 엑셀 다운로드</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>입고일자</th><th>품목명</th>
+            <th class="r">수량</th><th class="r">단가 (원)</th>
+            <th>담당자</th><th>비고</th><th class="c">삭제</th>
+          </tr>
+        </thead>
+        <tbody id="inbound-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB 3: 출고 ── -->
+  <div id="pane-outbound" class="tab-pane">
+    <div class="form-card">
+      <div class="form-card-title">
+        <span class="dot dot-red"></span> 출고 정보 입력
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">출고일자 *</label>
+          <input class="form-input" type="date" id="out-date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">품목명 *</label>
+          <select class="form-select" id="out-item" onchange="onItemChange()">
+            <option value="">품목 선택</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">현재 재고</label>
+          <input class="form-input" type="text" id="out-stock-display" readonly placeholder="품목 선택 후 표시" style="background:#F7F8F5; color:var(--text-muted);" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고 수량 *</label>
+          <input class="form-input" type="number" id="out-qty" placeholder="0" min="1" oninput="checkStock()" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고처</label>
+          <input class="form-input" type="text" id="out-dest" placeholder="회사명 또는 부서명" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">수령인</label>
+          <input class="form-input" type="text" id="out-recipient" placeholder="수령인 이름" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고 목적</label>
+          <select class="form-select" id="out-purpose">
+            <option value="">선택하세요</option>
+            <option>고객 제공</option>
+            <option>행사/이벤트 제공</option>
+            <option>기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고자</label>
+          <select class="form-select" id="out-manager">
+            <option value="">선택하세요</option>
+            <option>이상윤</option>
+            <option>임영택</option>
+            <option>전성민</option>
+            <option>강소연</option>
+            <option>류승백</option>
+            <option>이정환</option>
+            <option>전승규</option>
+            <option>정예진</option>
+          </select>
+        </div>
+        <div class="form-group span3">
+          <label class="form-label">비고</label>
+          <input class="form-input" type="text" id="out-note" placeholder="특이사항 입력..." />
+        </div>
+      </div>
+      <div id="stock-alert" class="alert alert-warn">⚠ 재고 초과: 요청 수량이 현재 재고보다 많습니다.</div>
+      <div class="form-actions">
+        <button class="btn" onclick="clearForm('out')">초기화</button>
+        <button class="btn btn-danger" onclick="submitOutbound()">출고 등록</button>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">출고 내역</span>
+      <button class="btn btn-excel btn-sm" onclick="exportExcel('outbound')">⬇ 엑셀 다운로드</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>출고일자</th><th>품목명</th><th>출고처</th><th>수령인</th>
+            <th class="r">수량</th><th>목적</th><th>출고자</th><th>비고</th><th class="c">삭제</th>
+          </tr>
+        </thead>
+        <tbody id="outbound-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// ★ JSONBin.io 설정 — 아래 두 값을 채워넣으세요 ★
+// ════════════════════════════════════════════════════════════════
+const JSONBIN_BIN_ID  = '69dc7fe036566621a8a8eef9';
+const JSONBIN_API_KEY = '$2a$10$2DhzNG6g0qogaKZqE.//mOzUMR5YzSinWARerhL0lyryj.Ao2Vkpa';
+// ════════════════════════════════════════════════════════════════
+
+const BASE_URL = 'https://api.jsonbin.io/v3/b';
+const HEADERS  = { 'Content-Type':'application/json', 'X-Master-Key': JSONBIN_API_KEY };
+
+const inventory    = [];
+const inboundLogs  = [];
+const outboundLogs = [];
+
+// ── 연결 상태 표시 ─────────────────────────────────────────────
+function setSyncStatus(state, text) {
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-text');
+  const btn   = document.getElementById('btn-refresh');
+  const colors = { ok:'#1D9E75', error:'#E24B4A', loading:'#EF9F27', none:'#A0A099' };
+  dot.style.background = colors[state] || colors.none;
+  label.textContent = text;
+  if (btn) btn.style.display = (state === 'ok' || state === 'error') ? 'inline-flex' : 'none';
+}
+
+// ── JSONBin 전체 읽기 ──────────────────────────────────────────
+async function loadFromBin(showMsg = false) {
+  if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) {
+    setSyncStatus('none', 'API 키 미설정 (로컬 모드)');
+    loadLocalFallback();
+    return;
+  }
+  setSyncStatus('loading', '불러오는 중...');
+  try {
+    const res = await fetch(`${BASE_URL}/${JSONBIN_BIN_ID}/latest`, { headers: HEADERS });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const d = json.record;
+    inventory.length = 0;    inventory.push(...(d.inventory    || []));
+    inboundLogs.length = 0;  inboundLogs.push(...(d.inboundLogs  || []));
+    outboundLogs.length = 0; outboundLogs.push(...(d.outboundLogs || []));
+    saveLocal();
+    renderAll();
+    setSyncStatus('ok', '동기화 완료');
+    if (showMsg) showToast('✓ 최신 데이터를 불러왔습니다.');
+  } catch(e) {
+    setSyncStatus('error', '연결 실패 — 로컬 데이터 사용 중');
+    loadLocalFallback();
+    if (showMsg) showToast('서버 연결 실패. 로컬 데이터로 표시합니다.');
+  }
+}
+
+// ── JSONBin 전체 저장 ──────────────────────────────────────────
+async function saveToBin() {
+  if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
+  setSyncStatus('loading', '저장 중...');
+  try {
+    const res = await fetch(`${BASE_URL}/${JSONBIN_BIN_ID}`, {
+      method: 'PUT',
+      headers: HEADERS,
+      body: JSON.stringify({ inventory, inboundLogs, outboundLogs })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    saveLocal();
+    setSyncStatus('ok', '동기화 완료');
+  } catch(e) {
+    setSyncStatus('error', '저장 실패 — 로컬에만 저장됨');
+    saveLocal();
+  }
+}
+
+// ── 로컬 스토리지 백업 ─────────────────────────────────────────
+const KEYS = { inv:'plm_inv', inb:'plm_inb', out:'plm_out' };
+function saveLocal() {
+  try {
+    localStorage.setItem(KEYS.inv, JSON.stringify(inventory));
+    localStorage.setItem(KEYS.inb, JSON.stringify(inboundLogs));
+    localStorage.setItem(KEYS.out, JSON.stringify(outboundLogs));
+  } catch(e) {}
+}
+function loadLocalFallback() {
+  try {
+    const inv = localStorage.getItem(KEYS.inv);
+    const inb = localStorage.getItem(KEYS.inb);
+    const out = localStorage.getItem(KEYS.out);
+    if (inv && !inventory.length)    inventory.push(...JSON.parse(inv));
+    if (inb && !inboundLogs.length)  inboundLogs.push(...JSON.parse(inb));
+    if (out && !outboundLogs.length) outboundLogs.push(...JSON.parse(out));
+  } catch(e) {}
+  renderAll();
+}
+
+// ── Init ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadFromBin();
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('in-date').value  = today;
+  document.getElementById('out-date').value = today;
+  document.getElementById('header-date').textContent =
+    new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+});
+
+function renderAll() {
+  renderStats();
+  renderInventory(inventory);
+  renderRecentLogs();
+  renderInbound();
+  renderOutbound();
+  populateOutItems();
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function renderStats() {
+  const monthIn    = inboundLogs.reduce((s,l) => s + l.qty, 0);
+  const monthOut   = outboundLogs.reduce((s,l) => s + l.qty, 0);
+  const totalStock = inventory.reduce((s,it) => s + it.stock, 0);
+  document.getElementById('s-total-items').textContent = inventory.length.toString();
+  document.getElementById('s-month-in').textContent    = monthIn  > 0 ? '+' + monthIn.toLocaleString()  : '0';
+  document.getElementById('s-month-out').textContent   = monthOut > 0 ? '-' + monthOut.toLocaleString() : '0';
+  document.getElementById('s-remaining').textContent   = totalStock.toLocaleString();
+}
+
+// ── Inventory Table ────────────────────────────────────────────
+function renderInventory(items) {
+  const tbody        = document.getElementById('inventory-tbody');
+  const soldoutTbody = document.getElementById('soldout-tbody');
+  const monthInMap = {}, monthOutMap = {};
+  inboundLogs.forEach(l  => { monthInMap[l.name]  = (monthInMap[l.name] ||0) + l.qty; });
+  outboundLogs.forEach(l => { monthOutMap[l.name] = (monthOutMap[l.name]||0) + l.qty; });
+
+  const activeItems  = items.filter(it => it.stock > 0);
+  const soldoutItems = inventory.filter(it => it.stock === 0 && (monthInMap[it.name]||0) > 0);
+
+  tbody.innerHTML = activeItems.length
+    ? activeItems.map(it => `<tr>
+        <td><strong>${it.name}</strong></td>
+        <td class="r mono">${it.stock.toLocaleString()}</td>
+        <td class="r mono" style="color:var(--accent-mid)">+${(monthInMap[it.name]||0).toLocaleString()}</td>
+        <td class="r mono" style="color:var(--danger)">-${(monthOutMap[it.name]||0).toLocaleString()}</td>
+      </tr>`).join('')
+    : '<tr class="empty-row"><td colspan="4">현재 재고가 있는 품목이 없습니다.</td></tr>';
+
+  const countEl = document.getElementById('sold-out-count');
+  countEl.textContent = soldoutItems.length + '개';
+  countEl.style.display = soldoutItems.length > 0 ? 'inline-block' : 'none';
+
+  soldoutTbody.innerHTML = soldoutItems.length
+    ? soldoutItems.map(it => {
+        const outDates = outboundLogs.filter(l => l.name === it.name).map(l => l.date);
+        const lastOut  = outDates.length ? outDates.reduce((a,b) => a > b ? a : b) : '-';
+        return `<tr>
+          <td><strong style="color:var(--danger)">${it.name}</strong></td>
+          <td class="r mono" style="color:var(--accent-mid)">+${(monthInMap[it.name]||0).toLocaleString()}</td>
+          <td class="r mono" style="color:var(--danger)">-${(monthOutMap[it.name]||0).toLocaleString()}</td>
+          <td class="mono" style="color:var(--text-muted)">${lastOut}</td>
+        </tr>`;
+      }).join('')
+    : '<tr class="empty-row"><td colspan="4">재고 마감 품목이 없습니다.</td></tr>';
+}
+
+function filterInventory(q) {
+  const filtered = q.trim() ? inventory.filter(it => it.stock > 0 && it.name.includes(q)) : inventory;
+  renderInventory(filtered);
+}
+
+// ── Recent Logs ────────────────────────────────────────────────
+function renderRecentLogs() {
+  const all = [
+    ...inboundLogs.map(l  => ({ ...l, type:'in'  })),
+    ...outboundLogs.map(l => ({ ...l, type:'out' })),
+  ].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 6);
+  document.getElementById('recent-logs').innerHTML = all.length
+    ? all.map(l => `<div class="log-row">
+        <div class="log-icon ${l.type}">${l.type==='in'?'↓':'↑'}</div>
+        <div class="log-info">
+          <div class="log-name">${l.name}</div>
+          <div class="log-meta">${l.date} · ${l.type==='in' ? (l.manager||'-') : (l.dest||'-') + ' / ' + (l.purpose||'-')}</div>
+        </div>
+        <div class="log-qty ${l.type}">${l.type==='in'?'+':'-'}${l.qty.toLocaleString()}</div>
+      </div>`).join('')
+    : '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:14px;">입출고 기록이 없습니다.</div>';
+}
+
+// ── Inbound Table ──────────────────────────────────────────────
+function renderInbound() {
+  const tbody = document.getElementById('inbound-tbody');
+  if (!inboundLogs.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">입고 내역이 없습니다.</td></tr>'; return;
+  }
+  const reversed = [...inboundLogs].reverse();
+  tbody.innerHTML = reversed.map((l, ri) => {
+    const realIdx = inboundLogs.length - 1 - ri;
+    return `<tr>
+      <td class="mono">${l.date}</td>
+      <td><strong>${l.name}</strong></td>
+      <td class="r mono" style="color:var(--accent-mid);font-weight:700">+${l.qty.toLocaleString()}</td>
+      <td class="r mono">${l.price ? l.price.toLocaleString() : '-'}</td>
+      <td>${l.manager||'-'}</td>
+      <td style="color:var(--text-muted)">${l.note||'-'}</td>
+      <td class="c"><button class="btn-del" onclick="deleteInbound(${realIdx})">삭제</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Outbound Table ─────────────────────────────────────────────
+function renderOutbound() {
+  const tbody = document.getElementById('outbound-tbody');
+  if (!outboundLogs.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">출고 내역이 없습니다.</td></tr>'; return;
+  }
+  const reversed = [...outboundLogs].reverse();
+  tbody.innerHTML = reversed.map((l, ri) => {
+    const realIdx = outboundLogs.length - 1 - ri;
+    return `<tr>
+      <td class="mono">${l.date}</td>
+      <td><strong>${l.name}</strong></td>
+      <td>${l.dest||'-'}</td>
+      <td>${l.recipient||'-'}</td>
+      <td class="r mono" style="color:var(--danger);font-weight:700">-${l.qty.toLocaleString()}</td>
+      <td>${l.purpose||'-'}</td>
+      <td>${l.manager||'-'}</td>
+      <td style="color:var(--text-muted)">${l.note||'-'}</td>
+      <td class="c"><button class="btn-del" onclick="deleteOutbound(${realIdx})">삭제</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Out item select ────────────────────────────────────────────
+function populateOutItems() {
+  const sel = document.getElementById('out-item');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">품목 선택</option>';
+  inventory.filter(it => it.stock > 0).forEach(it => {
+    const opt = document.createElement('option');
+    opt.value = it.name;
+    opt.textContent = `${it.name} (재고: ${it.stock.toLocaleString()})`;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;
+}
+
+function onItemChange() {
+  const name = document.getElementById('out-item').value;
+  const item = inventory.find(it => it.name === name);
+  document.getElementById('out-stock-display').value = item ? item.stock.toLocaleString() + '개' : '';
+  checkStock();
+}
+
+function checkStock() {
+  const name  = document.getElementById('out-item').value;
+  const qty   = parseInt(document.getElementById('out-qty').value) || 0;
+  const item  = inventory.find(it => it.name === name);
+  const alert = document.getElementById('stock-alert');
+  if (item && qty > item.stock) {
+    alert.textContent = `⚠ 재고 초과: 현재 재고 ${item.stock.toLocaleString()}개, 요청 ${qty.toLocaleString()}개`;
+    alert.classList.add('show');
+  } else { alert.classList.remove('show'); }
+}
+
+// ── Submit: Inbound ────────────────────────────────────────────
+async function submitInbound() {
+  const date    = document.getElementById('in-date').value;
+  const name    = document.getElementById('in-item').value.trim();
+  const qty     = parseInt(document.getElementById('in-qty').value) || 0;
+  const price   = parseInt(document.getElementById('in-price').value) || 0;
+  const manager = document.getElementById('in-manager').value.trim();
+  const note    = document.getElementById('in-note').value.trim();
+  if (!date || !name || !qty) { showToast('날짜, 품목명, 수량은 필수입니다.'); return; }
+
+  const row = { id: Date.now().toString(), date, name, qty, price, manager, note };
+  inboundLogs.unshift(row);
+  const existing = inventory.find(it => it.name === name);
+  if (existing) { existing.stock += qty; }
+  else { inventory.push({ name, category:'미분류', stock: qty, safeStock: 0 }); }
+
+  clearForm('in');
+  renderAll();
+  showToast('✓ 입고가 등록되었습니다.');
+  await saveToBin();
+}
+
+// ── Submit: Outbound ───────────────────────────────────────────
+async function submitOutbound() {
+  const date      = document.getElementById('out-date').value;
+  const name      = document.getElementById('out-item').value;
+  const qty       = parseInt(document.getElementById('out-qty').value) || 0;
+  const dest      = document.getElementById('out-dest').value.trim();
+  const recipient = document.getElementById('out-recipient').value.trim();
+  const purpose   = document.getElementById('out-purpose').value;
+  const manager   = document.getElementById('out-manager').value.trim();
+  const note      = document.getElementById('out-note').value.trim();
+  if (!date || !name || !qty) { showToast('날짜, 품목명, 수량은 필수입니다.'); return; }
+  const item = inventory.find(it => it.name === name);
+  if (item && qty > item.stock) { showToast('재고가 부족합니다.'); return; }
+
+  const row = { id: Date.now().toString(), date, name, dest, recipient, qty, purpose, manager, note };
+  outboundLogs.unshift(row);
+  if (item) item.stock -= qty;
+
+  clearForm('out');
+  renderAll();
+  showToast('✓ 출고가 등록되었습니다.');
+  await saveToBin();
+}
+
+// ── Delete: Inbound ────────────────────────────────────────────
+async function deleteInbound(idx) {
+  const log = inboundLogs[idx];
+  if (!confirm(`입고 내역을 삭제하시겠습니까?\n\n품목: ${log.name}\n수량: +${log.qty}\n날짜: ${log.date}\n\n※ 재고에서 차감됩니다.`)) return;
+  const item = inventory.find(it => it.name === log.name);
+  if (item) item.stock -= log.qty;
+  inboundLogs.splice(idx, 1);
+  renderAll();
+  showToast('입고 내역이 삭제되었습니다.');
+  await saveToBin();
+}
+
+// ── Delete: Outbound ───────────────────────────────────────────
+async function deleteOutbound(idx) {
+  const log = outboundLogs[idx];
+  if (!confirm(`출고 내역을 삭제하시겠습니까?\n\n품목: ${log.name}\n수량: -${log.qty}\n날짜: ${log.date}\n\n※ 재고가 복구됩니다.`)) return;
+  const item = inventory.find(it => it.name === log.name);
+  if (item) item.stock += log.qty;
+  outboundLogs.splice(idx, 1);
+  renderAll();
+  showToast('출고 내역이 삭제되었습니다.');
+  await saveToBin();
+}
+
+// ── Form Reset ────────────────────────────────────────────────
+function clearForm(type) {
+  const today = new Date().toISOString().split('T')[0];
+  if (type === 'in') {
+    document.getElementById('in-date').value    = today;
+    document.getElementById('in-item').value    = '';
+    document.getElementById('in-qty').value     = '';
+    document.getElementById('in-price').value   = '';
+    document.getElementById('in-manager').value = '';
+    document.getElementById('in-note').value    = '';
+  } else {
+    document.getElementById('out-date').value      = today;
+    document.getElementById('out-item').value      = '';
+    document.getElementById('out-stock-display').value = '';
+    document.getElementById('out-dest').value      = '';
+    document.getElementById('out-recipient').value = '';
+    document.getElementById('out-qty').value       = '';
+    document.getElementById('out-purpose').value   = '';
+    document.getElementById('out-manager').value   = '';
+    document.getElementById('out-note').value      = '';
+    document.getElementById('stock-alert').classList.remove('show');
+  }
+}
+
+// ── Tab Switch ────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el  => el.classList.remove('active'));
+  document.getElementById('pane-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── Excel Export ──────────────────────────────────────────────
+function exportExcel(type) {
+  const wb = XLSX.utils.book_new();
+  if (type === 'all' || type === 'inventory') {
+    const monthInMap = {}, monthOutMap = {};
+    inboundLogs.forEach(l  => { monthInMap[l.name]  = (monthInMap[l.name] ||0) + l.qty; });
+    outboundLogs.forEach(l => { monthOutMap[l.name] = (monthOutMap[l.name]||0) + l.qty; });
+    const data = [['품목명','현재재고','이달입고','이달출고']];
+    inventory.forEach(it => data.push([it.name, it.stock, monthInMap[it.name]||0, monthOutMap[it.name]||0]));
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch:20},{wch:10},{wch:10},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws, '판촉물현황');
+  }
+  if (type === 'all' || type === 'inbound') {
+    const data = [['입고일자','품목명','수량','단가(원)','담당자','비고']];
+    inboundLogs.forEach(l => data.push([l.date, l.name, l.qty, l.price||0, l.manager||'', l.note||'']));
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch:14},{wch:20},{wch:8},{wch:12},{wch:12},{wch:24}];
+    XLSX.utils.book_append_sheet(wb, ws, '입고대장');
+  }
+  if (type === 'all' || type === 'outbound') {
+    const data = [['출고일자','품목명','출고처','수령인','수량','목적','출고자','비고']];
+    outboundLogs.forEach(l => data.push([l.date, l.name, l.dest||'', l.recipient||'', l.qty, l.purpose||'', l.manager||'', l.note||'']));
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch:14},{wch:20},{wch:16},{wch:14},{wch:8},{wch:16},{wch:12},{wch:24}];
+    XLSX.utils.book_append_sheet(wb, ws, '출고대장');
+  }
+  const today = new Date().toISOString().split('T')[0];
+  const names = { all:'판촉물_입출고_대장', inbound:'입고대장', outbound:'출고대장' };
+  XLSX.writeFile(wb, `${names[type]}_${today}.xlsx`);
+  showToast('⬇ 엑셀 파일 다운로드 완료');
+}
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --accent: #1D9E75;
+  --accent-light: #E1F5EE;
+  --accent-dark: #085041;
+  --accent-mid: #0F6E56;
+  --danger: #E24B4A;
+  --danger-light: #FCEBEB;
+  --warn: #EF9F27;
+  --warn-light: #FAEEDA;
+  --warn-dark: #854F0B;
+  --blue: #378ADD;
+  --blue-light: #E6F1FB;
+  --blue-dark: #0C447C;
+  --bg: #F7F8F5;
+  --surface: #FFFFFF;
+  --surface2: #F1F0EC;
+  --border: #E2E1DC;
+  --border-strong: #CACAC0;
+  --text: #1C1C1A;
+  --text-muted: #6B6B64;
+  --text-hint: #A0A099;
+  --font: 'Noto Sans KR', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+html { font-size: 15px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ─── Header ─── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; align-items: center; gap: 16px;
+  height: 58px;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 15px; color: var(--text);
+  text-decoration: none;
+}
+.logo-mark {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+}
+.logo-mark svg { width: 18px; height: 18px; }
+.header-sub { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.header-date { font-size: 13px; color: var(--text-muted); font-family: var(--mono); }
+
+/* ─── Tabs ─── */
+.tab-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+.tab-nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 2px;
+}
+.tab-btn {
+  padding: 13px 20px; font-size: 14px; font-weight: 500;
+  border: none; background: none; cursor: pointer;
+  color: var(--text-muted); border-bottom: 2px solid transparent;
+  transition: all 0.18s; white-space: nowrap;
+  display: flex; align-items: center; gap: 7px;
+}
+.tab-btn .tab-icon { font-size: 16px; }
+.tab-btn.active { color: var(--accent-mid); border-bottom-color: var(--accent); }
+.tab-btn:hover:not(.active) { color: var(--text); }
+
+/* ─── Layout ─── */
+.main {
+  max-width: 960px; margin: 0 auto;
+  padding: 24px 24px 48px;
+}
+.tab-pane { display: none; animation: fadeIn 0.18s ease; }
+.tab-pane.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── Stat Cards ─── */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.02em; }
+.stat-val { font-size: 26px; font-weight: 700; font-family: var(--mono); }
+.stat-val.green { color: var(--accent-mid); }
+.stat-val.red { color: var(--danger); }
+.stat-val.blue { color: var(--blue-dark); }
+.stat-val.warn { color: var(--warn-dark); }
+
+/* ─── Section ─── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 24px 0 12px;
+}
+.section-title {
+  font-size: 13px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+/* ─── Toolbar ─── */
+.toolbar {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.search-input {
+  flex: 1; min-width: 200px; padding: 9px 13px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: var(--font); font-size: 14px; background: var(--surface);
+  color: var(--text); outline: none; transition: border 0.15s;
+}
+.search-input:focus { border-color: var(--accent); }
+.btn {
+  padding: 9px 16px; border-radius: var(--radius); font-size: 13px;
+  font-weight: 500; cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); display: flex;
+  align-items: center; gap: 6px; white-space: nowrap; transition: all 0.15s;
+  font-family: var(--font);
+}
+.btn:hover { background: var(--surface2); }
+.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-accent:hover { background: var(--accent-mid); border-color: var(--accent-mid); }
+.btn-green { background: var(--accent-light); color: var(--accent-mid); border-color: #9FE1CB; }
+.btn-green:hover { background: #C5EDE0; }
+.btn-excel { background: #1D6F42; color: #fff; border-color: #1D6F42; }
+.btn-excel:hover { background: #155232; }
+.btn-danger { background: var(--danger-light); color: var(--danger); border-color: #F7C1C1; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-del {
+  padding: 3px 10px; font-size: 12px; font-weight: 500;
+  border: 1px solid #F7C1C1; border-radius: 6px; cursor: pointer;
+  background: var(--danger-light); color: var(--danger);
+  font-family: var(--font); transition: all 0.15s; white-space: nowrap;
+}
+.btn-del:hover { background: #F7C1C1; }
+
+/* ─── Table ─── */
+.table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table thead tr { background: var(--surface2); }
+.data-table th {
+  padding: 11px 14px; text-align: left; font-size: 12px; font-weight: 700;
+  color: var(--text-muted); letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+}
+.data-table th.r, .data-table td.r { text-align: right; }
+.data-table th.c, .data-table td.c { text-align: center; }
+.data-table td {
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: #FAFAF7; }
+.data-table .mono { font-family: var(--mono); font-size: 13px; }
+
+/* ─── Badges ─── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 500;
+}
+.badge-ok { background: var(--accent-light); color: var(--accent-mid); }
+.badge-low { background: var(--warn-light); color: var(--warn-dark); }
+.badge-out { background: var(--danger-light); color: var(--danger); }
+
+/* ─── Form Card ─── */
+.form-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 22px 24px;
+  margin-bottom: 16px; box-shadow: var(--shadow-sm);
+}
+.form-card-title {
+  font-size: 15px; font-weight: 700; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.form-card-title .dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.dot-green { background: var(--accent); }
+.dot-red { background: var(--danger); }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.span2 { grid-column: span 2; }
+.form-group.span3 { grid-column: span 3; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.02em; }
+.form-input, .form-select, .form-textarea {
+  padding: 9px 12px; border: 1px solid var(--border);
+  border-radius: var(--radius); font-family: var(--font); font-size: 14px;
+  background: var(--surface); color: var(--text); outline: none; transition: border 0.15s;
+  width: 100%;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-textarea { resize: vertical; min-height: 60px; }
+.form-actions {
+  display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px;
+  padding-top: 16px; border-top: 1px solid var(--border);
+}
+
+/* ─── Alert ─── */
+.alert {
+  padding: 10px 14px; border-radius: var(--radius); font-size: 13px;
+  display: none; margin-top: 10px; align-items: center; gap: 8px;
+}
+.alert.show { display: flex; }
+.alert-warn { background: var(--warn-light); color: var(--warn-dark); border: 1px solid #FAC775; }
+.alert-danger { background: var(--danger-light); color: var(--danger); border: 1px solid #F7C1C1; }
+.alert-success { background: var(--accent-light); color: var(--accent-mid); border: 1px solid #9FE1CB; }
+
+/* ─── Log ─── */
+.log-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.log-row:last-child { border-bottom: none; }
+.log-icon {
+  width: 34px; height: 34px; border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; flex-shrink: 0;
+}
+.log-icon.in { background: var(--accent-light); color: var(--accent-mid); }
+.log-icon.out { background: var(--danger-light); color: var(--danger); }
+.log-info { flex: 1; }
+.log-name { font-size: 14px; font-weight: 500; }
+.log-meta { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.log-qty { font-family: var(--mono); font-weight: 700; font-size: 15px; }
+.log-qty.in { color: var(--accent-mid); }
+.log-qty.out { color: var(--danger); }
+
+/* ─── Toast ─── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: #1C1C1A; color: #fff; padding: 12px 20px;
+  border-radius: var(--radius); font-size: 14px; font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  opacity: 0; transform: translateY(8px); transition: all 0.25s;
+  pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ─── Empty ─── */
+.empty-row td {
+  text-align: center; padding: 32px; color: var(--text-muted); font-size: 14px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 700px) {
+  .main { padding: 16px 16px 40px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .form-group.span3 { grid-column: span 2; }
+  .tab-btn { padding: 12px 14px; font-size: 13px; }
+  .tab-btn .tab-icon { display: none; }
+  .header-sub { display: none; }
+  .data-table { font-size: 13px; }
+  .data-table th, .data-table td { padding: 9px 10px; }
+}
+@media (max-width: 480px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.span2, .form-group.span3 { grid-column: span 1; }
+  .toolbar { flex-direction: column; }
+  .search-input { min-width: unset; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-mark">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.9"/>
+          <rect x="10" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="2" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="10" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.9"/>
+        </svg>
+      </div>
+      판촉물 관리
+    </a>
+    <span class="header-sub">입출고 대장</span>
+    <div class="header-right">
+      <span class="header-date" id="header-date"></span>
+      <div id="sync-status" style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);">
+        <span id="sync-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text-hint);flex-shrink:0;"></span>
+        <span id="sync-text">연결 확인 중...</span>
+      </div>
+      <button class="btn btn-sm" onclick="loadFromSheets(true)" id="btn-refresh" style="display:none">↻ 새로고침</button>
+    </div>
+  </div>
+</header>
+
+<!-- Tab Nav -->
+<nav class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="switchTab('status', this)">
+      <span class="tab-icon">📦</span> 판촉물 현황
+    </button>
+    <button class="tab-btn" onclick="switchTab('inbound', this)">
+      <span class="tab-icon">📥</span> 입고 대장
+    </button>
+    <button class="tab-btn" onclick="switchTab('outbound', this)">
+      <span class="tab-icon">📤</span> 출고 대장
+    </button>
+  </div>
+</nav>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- ── TAB 1: 현황 ── -->
+  <div id="pane-status" class="tab-pane active">
+    <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="stat-card">
+        <div class="stat-label">총 품목 수</div>
+        <div class="stat-val blue" id="s-total-items">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">이달 총 입고</div>
+        <div class="stat-val green" id="s-month-in">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">이달 총 출고</div>
+        <div class="stat-val red" id="s-month-out">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">잔여 현황 (총 재고)</div>
+        <div class="stat-val blue" id="s-remaining">0</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input class="search-input" type="text" placeholder="품목명 검색..." oninput="filterInventory(this.value)" />
+      <button class="btn btn-excel" onclick="exportExcel('all')">
+        ⬇ 전체 엑셀 다운로드
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>품목명</th>
+            <th class="r">현재 재고</th>
+            <th class="r">이달 입고</th>
+            <th class="r">이달 출고</th>
+          </tr>
+        </thead>
+        <tbody id="inventory-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-header" style="margin-top:28px;">
+      <span class="section-title">재고 마감 품목</span>
+      <span id="sold-out-count" style="font-size:12px;color:var(--danger);font-weight:600;background:var(--danger-light);padding:3px 10px;border-radius:99px;">0개</span>
+    </div>
+    <div class="table-wrap" id="sold-out-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>품목명</th>
+            <th class="r">누적 입고</th>
+            <th class="r">누적 출고</th>
+            <th>마감일</th>
+          </tr>
+        </thead>
+        <tbody id="soldout-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-header" style="margin-top:28px;">
+      <span class="section-title">최근 입출고 기록</span>
+    </div>
+    <div class="table-wrap" style="padding: 4px 16px;">
+      <div id="recent-logs"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB 2: 입고 ── -->
+  <div id="pane-inbound" class="tab-pane">
+    <div class="form-card">
+      <div class="form-card-title">
+        <span class="dot dot-green"></span> 입고 정보 입력
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">입고일자 *</label>
+          <input class="form-input" type="date" id="in-date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">품목명 *</label>
+          <input class="form-input" type="text" id="in-item" placeholder="예: 볼펜 (로고)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">입고 수량 *</label>
+          <input class="form-input" type="number" id="in-qty" placeholder="0" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">단가 (원)</label>
+          <input class="form-input" type="number" id="in-price" placeholder="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">담당자</label>
+          <input class="form-input" type="text" id="in-manager" placeholder="담당자명" />
+        </div>
+        <div class="form-group span3">
+          <label class="form-label">비고</label>
+          <input class="form-input" type="text" id="in-note" placeholder="특이사항 입력..." />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="clearForm('in')">초기화</button>
+        <button class="btn btn-accent" onclick="submitInbound()">입고 등록</button>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">입고 내역</span>
+      <button class="btn btn-excel btn-sm" onclick="exportExcel('inbound')">⬇ 엑셀 다운로드</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>입고일자</th><th>품목명</th>
+            <th class="r">수량</th><th class="r">단가 (원)</th>
+            <th>담당자</th><th>비고</th><th class="c">삭제</th>
+          </tr>
+        </thead>
+        <tbody id="inbound-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── TAB 3: 출고 ── -->
+  <div id="pane-outbound" class="tab-pane">
+    <div class="form-card">
+      <div class="form-card-title">
+        <span class="dot dot-red"></span> 출고 정보 입력
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">출고일자 *</label>
+          <input class="form-input" type="date" id="out-date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">품목명 *</label>
+          <select class="form-select" id="out-item" onchange="onItemChange()">
+            <option value="">품목 선택</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">현재 재고</label>
+          <input class="form-input" type="text" id="out-stock-display" readonly placeholder="품목 선택 후 표시" style="background:#F7F8F5; color:var(--text-muted);" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고 수량 *</label>
+          <input class="form-input" type="number" id="out-qty" placeholder="0" min="1" oninput="checkStock()" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고처</label>
+          <input class="form-input" type="text" id="out-dest" placeholder="회사명 또는 부서명" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">수령인</label>
+          <input class="form-input" type="text" id="out-recipient" placeholder="수령인 이름" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고 목적</label>
+          <select class="form-select" id="out-purpose">
+            <option value="">선택하세요</option>
+            <option>고객 제공</option>
+            <option>행사/이벤트 제공</option>
+            <option>기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고자</label>
+          <select class="form-select" id="out-manager">
+            <option value="">선택하세요</option>
+            <option>이상윤</option>
+            <option>임영택</option>
+            <option>전성민</option>
+            <option>강소연</option>
+            <option>류승백</option>
+            <option>이정환</option>
+            <option>전승규</option>
+            <option>정예진</option>
+          </select>
+        </div>
+        <div class="form-group span3">
+          <label class="form-label">비고</label>
+          <input class="form-input" type="text" id="out-note" placeholder="특이사항 입력..." />
+        </div>
+      </div>
+      <div id="stock-alert" class="alert alert-warn">⚠ 재고 초과: 요청 수량이 현재 재고보다 많습니다.</div>
+      <div class="form-actions">
+        <button class="btn" onclick="clearForm('out')">초기화</button>
+        <button class="btn btn-danger" onclick="submitOutbound()">출고 등록</button>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">출고 내역</span>
+      <button class="btn btn-excel btn-sm" onclick="exportExcel('outbound')">⬇ 엑셀 다운로드</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>출고일자</th><th>품목명</th><th>출고처</th><th>수령인</th>
+            <th class="r">수량</th><th>목적</th><th>출고자</th><th>비고</th><th class="c">삭제</th>
+          </tr>
+        </thead>
+        <tbody id="outbound-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ── Storage helpers ──────────────────────────────────────────
+const KEYS = { inv: 'plm_inventory', inb: 'plm_inbound', out: 'plm_outbound' };
+
+function saveData() {
+  try {
+    localStorage.setItem(KEYS.inv, JSON.stringify(inventory));
+    localStorage.setItem(KEYS.inb, JSON.stringify(inboundLogs));
+    localStorage.setItem(KEYS.out, JSON.stringify(outboundLogs));
+  } catch(e) { console.warn('저장 실패:', e); }
+}
+
+function loadData() {
+  try {
+    const inv = localStorage.getItem(KEYS.inv);
+    const inb = localStorage.getItem(KEYS.inb);
+    const out = localStorage.getItem(KEYS.out);
+    if (inv) inventory.push(...JSON.parse(inv));
+    if (inb) inboundLogs.push(...JSON.parse(inb));
+    if (out) outboundLogs.push(...JSON.parse(out));
+  } catch(e) { console.warn('불러오기 실패:', e); }
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify({ inventory, inboundLogs, outboundLogs }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '판촉물대장_데이터_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  showToast('✓ 데이터 파일이 저장되었습니다.');
+}
+
+function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (!d.inventory || !d.inboundLogs || !d.outboundLogs) throw new Error('형식 오류');
+      if (!confirm('현재 데이터를 불러온 파일로 교체하겠습니까?\n기존 데이터는 사라집니다.')) return;
+      inventory.length = 0; inboundLogs.length = 0; outboundLogs.length = 0;
+      inventory.push(...d.inventory);
+      inboundLogs.push(...d.inboundLogs);
+      outboundLogs.push(...d.outboundLogs);
+      saveData(); renderAll();
+      showToast('✓ 데이터를 불러왔습니다.');
+    } catch(err) { alert('파일을 읽을 수 없습니다. 올바른 데이터 파일인지 확인하세요.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ── State ──────────────────────────────────────────
+const inventory = [];
+const inboundLogs = [];
+const outboundLogs = [];
+
+// ── Init ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('in-date').value = today;
+  document.getElementById('out-date').value = today;
+  document.getElementById('header-date').textContent = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'short' });
+  renderAll();
+});
+
+function renderAll() {
+  renderStats();
+  renderInventory(inventory);
+  renderRecentLogs();
+  renderInbound();
+  renderOutbound();
+  populateOutItems();
+}
+
+// ── Stats ──────────────────────────────────────────
+function renderStats() {
+  const monthIn = inboundLogs.reduce((s, l) => s + l.qty, 0);
+  const monthOut = outboundLogs.reduce((s, l) => s + l.qty, 0);
+  const totalStock = inventory.reduce((s, it) => s + it.stock, 0);
+  document.getElementById('s-total-items').textContent = inventory.length.toString();
+  document.getElementById('s-month-in').textContent = monthIn > 0 ? '+' + monthIn.toLocaleString() : '0';
+  document.getElementById('s-month-out').textContent = monthOut > 0 ? '-' + monthOut.toLocaleString() : '0';
+  document.getElementById('s-remaining').textContent = totalStock.toLocaleString();
+}
+
+// ── Inventory Table ──────────────────────────────────────────
+function getStatusBadge(stock, safe) {
+  if (stock === 0) return '<span class="badge badge-out">품절</span>';
+  if (stock < safe) return '<span class="badge badge-low">부족</span>';
+  return '<span class="badge badge-ok">정상</span>';
+}
+
+function renderInventory(items) {
+  const tbody = document.getElementById('inventory-tbody');
+  const soldoutTbody = document.getElementById('soldout-tbody');
+
+  const monthInMap = {};
+  const monthOutMap = {};
+  inboundLogs.forEach(l => { monthInMap[l.name] = (monthInMap[l.name]||0) + l.qty; });
+  outboundLogs.forEach(l => { monthOutMap[l.name] = (monthOutMap[l.name]||0) + l.qty; });
+
+  // 재고 있는 품목 (현재 재고 > 0)
+  const activeItems = items.filter(it => it.stock > 0);
+  if (!activeItems.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">현재 재고가 있는 품목이 없습니다.</td></tr>';
+  } else {
+    tbody.innerHTML = activeItems.map(it => `
+      <tr>
+        <td><strong>${it.name}</strong></td>
+        <td class="r mono">${it.stock.toLocaleString()}</td>
+        <td class="r mono" style="color:var(--accent-mid)">+${(monthInMap[it.name]||0).toLocaleString()}</td>
+        <td class="r mono" style="color:var(--danger)">-${(monthOutMap[it.name]||0).toLocaleString()}</td>
+      </tr>`).join('');
+  }
+
+  // 재고 마감 품목 (현재 재고 === 0, 한 번이라도 입고 이력 있는 것)
+  const soldoutItems = inventory.filter(it => it.stock === 0 && (monthInMap[it.name] || 0) > 0);
+  const countEl = document.getElementById('sold-out-count');
+  countEl.textContent = soldoutItems.length + '개';
+  countEl.style.display = soldoutItems.length > 0 ? 'inline-block' : 'none';
+
+  if (!soldoutItems.length) {
+    soldoutTbody.innerHTML = '<tr class="empty-row"><td colspan="4">재고 마감 품목이 없습니다.</td></tr>';
+  } else {
+    soldoutTbody.innerHTML = soldoutItems.map(it => {
+      // 마감일 = 해당 품목의 가장 최근 출고일
+      const outDates = outboundLogs.filter(l => l.name === it.name).map(l => l.date);
+      const lastOut = outDates.length ? outDates.reduce((a,b) => a > b ? a : b) : '-';
+      return `<tr>
+        <td><strong style="color:var(--danger)">${it.name}</strong></td>
+        <td class="r mono" style="color:var(--accent-mid)">+${(monthInMap[it.name]||0).toLocaleString()}</td>
+        <td class="r mono" style="color:var(--danger)">-${(monthOutMap[it.name]||0).toLocaleString()}</td>
+        <td class="mono" style="color:var(--text-muted)">${lastOut}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function filterInventory(q) {
+  const filtered = q.trim()
+    ? inventory.filter(it => it.stock > 0 && it.name.includes(q))
+    : inventory;
+  renderInventory(filtered);
+}
+
+// ── Recent Logs ──────────────────────────────────────────
+function renderRecentLogs() {
+  const all = [
+    ...inboundLogs.map(l => ({ ...l, type:'in' })),
+    ...outboundLogs.map(l => ({ ...l, type:'out' })),
+  ].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 6);
+
+  document.getElementById('recent-logs').innerHTML = all.map(l => `
+    <div class="log-row">
+      <div class="log-icon ${l.type}">${l.type === 'in' ? '↓' : '↑'}</div>
+      <div class="log-info">
+        <div class="log-name">${l.name}</div>
+        <div class="log-meta">${l.date} · ${l.type === 'in' ? (l.supplier||'-') : (l.dest||'-') + ' / ' + (l.purpose||'-')}</div>
+      </div>
+      <div class="log-qty ${l.type}">${l.type === 'in' ? '+' : '-'}${l.qty.toLocaleString()}</div>
+    </div>`).join('');
+}
+
+// ── Inbound Table ──────────────────────────────────────────
+function renderInbound() {
+  const tbody = document.getElementById('inbound-tbody');
+  if (!inboundLogs.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">입고 내역이 없습니다.</td></tr>';
+    return;
+  }
+  const reversed = [...inboundLogs].reverse();
+  tbody.innerHTML = reversed.map((l, ri) => {
+    const realIdx = inboundLogs.length - 1 - ri;
+    return `<tr>
+      <td class="mono">${l.date}</td>
+      <td><strong>${l.name}</strong></td>
+      <td class="r mono" style="color:var(--accent-mid);font-weight:700">+${l.qty.toLocaleString()}</td>
+      <td class="r mono">${l.price ? l.price.toLocaleString() : '-'}</td>
+      <td>${l.manager||'-'}</td>
+      <td style="color:var(--text-muted)">${l.note||'-'}</td>
+      <td class="c"><button class="btn-del" onclick="deleteInbound(${realIdx})">삭제</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Outbound Table ──────────────────────────────────────────
+function renderOutbound() {
+  const tbody = document.getElementById('outbound-tbody');
+  if (!outboundLogs.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">출고 내역이 없습니다.</td></tr>';
+    return;
+  }
+  const reversed = [...outboundLogs].reverse();
+  tbody.innerHTML = reversed.map((l, ri) => {
+    const realIdx = outboundLogs.length - 1 - ri;
+    return `<tr>
+      <td class="mono">${l.date}</td>
+      <td><strong>${l.name}</strong></td>
+      <td>${l.dest||'-'}</td>
+      <td>${l.recipient||'-'}</td>
+      <td class="r mono" style="color:var(--danger);font-weight:700">-${l.qty.toLocaleString()}</td>
+      <td>${l.purpose||'-'}</td>
+      <td>${l.manager||'-'}</td>
+      <td style="color:var(--text-muted)">${l.note||'-'}</td>
+      <td class="c"><button class="btn-del" onclick="deleteOutbound(${realIdx})">삭제</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Delete ──────────────────────────────────────────
+function deleteInbound(idx) {
+  const log = inboundLogs[idx];
+  if (!confirm(`입고 내역을 삭제하시겠습니까?\n\n품목: ${log.name}\n수량: +${log.qty}\n날짜: ${log.date}\n\n※ 해당 품목의 재고에서 차감됩니다.`)) return;
+  const item = inventory.find(it => it.name === log.name);
+  if (item) item.stock -= log.qty;
+  inboundLogs.splice(idx, 1);
+  saveData();
+  renderAll();
+  showToast('입고 내역이 삭제되었습니다.');
+}
+
+function deleteOutbound(idx) {
+  const log = outboundLogs[idx];
+  if (!confirm(`출고 내역을 삭제하시겠습니까?\n\n품목: ${log.name}\n수량: -${log.qty}\n날짜: ${log.date}\n\n※ 해당 품목의 재고가 복구됩니다.`)) return;
+  const item = inventory.find(it => it.name === log.name);
+  if (item) item.stock += log.qty;
+  outboundLogs.splice(idx, 1);
+  saveData();
+  renderAll();
+  showToast('출고 내역이 삭제되었습니다.');
+}
+
+// ── Out item select ──────────────────────────────────────────
+function populateOutItems() {
+  const sel = document.getElementById('out-item');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">품목 선택</option>';
+  inventory.filter(it => it.stock > 0).forEach(it => {
+    const opt = document.createElement('option');
+    opt.value = it.name;
+    opt.textContent = `${it.name} (재고: ${it.stock.toLocaleString()})`;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;
+}
+
+function onItemChange() {
+  const name = document.getElementById('out-item').value;
+  const item = inventory.find(it => it.name === name);
+  document.getElementById('out-stock-display').value = item ? item.stock.toLocaleString() + '개' : '';
+  checkStock();
+}
+
+function checkStock() {
+  const name = document.getElementById('out-item').value;
+  const qty = parseInt(document.getElementById('out-qty').value) || 0;
+  const item = inventory.find(it => it.name === name);
+  const alert = document.getElementById('stock-alert');
+  if (item && qty > item.stock) {
+    alert.textContent = `⚠ 재고 초과: 현재 재고 ${item.stock.toLocaleString()}개, 요청 ${qty.toLocaleString()}개`;
+    alert.classList.add('show');
+  } else {
+    alert.classList.remove('show');
+  }
+}
+
+// ── Submit ──────────────────────────────────────────
+function submitInbound() {
+  const date = document.getElementById('in-date').value;
+  const name = document.getElementById('in-item').value.trim();
+  const qty = parseInt(document.getElementById('in-qty').value) || 0;
+  const price = parseInt(document.getElementById('in-price').value) || 0;
+  const manager = document.getElementById('in-manager').value.trim();
+  const note = document.getElementById('in-note').value.trim();
+
+  if (!date || !name || !qty) {
+    showToast('날짜, 품목명, 수량은 필수입니다.'); return;
+  }
+
+  inboundLogs.unshift({ date, name, qty, price, manager, note });
+
+  const existing = inventory.find(it => it.name === name);
+  if (existing) {
+    existing.stock += qty;
+  } else {
+    inventory.push({ name, category: '미분류', stock: qty, safeStock: 0 });
+  }
+
+  clearForm('in');
+  saveData();
+  renderAll();
+  showToast('✓ 입고가 등록되었습니다.');
+}
+
+function submitOutbound() {
+  const date = document.getElementById('out-date').value;
+  const name = document.getElementById('out-item').value;
+  const qty = parseInt(document.getElementById('out-qty').value) || 0;
+  const dest = document.getElementById('out-dest').value.trim();
+  const recipient = document.getElementById('out-recipient').value.trim();
+  const purpose = document.getElementById('out-purpose').value;
+  const manager = document.getElementById('out-manager').value.trim();
+  const note = document.getElementById('out-note').value.trim();
+
+  if (!date || !name || !qty) {
+    showToast('날짜, 품목명, 수량은 필수입니다.'); return;
+  }
+  const item = inventory.find(it => it.name === name);
+  if (item && qty > item.stock) {
+    showToast('재고가 부족합니다.'); return;
+  }
+
+  outboundLogs.unshift({ date, name, dest, recipient, qty, purpose, manager, note });
+  if (item) item.stock -= qty;
+
+  clearForm('out');
+  saveData();
+  renderAll();
+  showToast('✓ 출고가 등록되었습니다.');
+}
+
+// ── Form Reset ──────────────────────────────────────────
+function clearForm(type) {
+  const today = new Date().toISOString().split('T')[0];
+  if (type === 'in') {
+    document.getElementById('in-date').value = today;
+    document.getElementById('in-item').value = '';
+    document.getElementById('in-qty').value = '';
+    document.getElementById('in-price').value = '';
+    document.getElementById('in-manager').value = '';
+    document.getElementById('in-note').value = '';
+  } else {
+    document.getElementById('out-date').value = today;
+    document.getElementById('out-item').value = '';
+    document.getElementById('out-stock-display').value = '';
+    document.getElementById('out-dest').value = '';
+    document.getElementById('out-recipient').value = '';
+    document.getElementById('out-qty').value = '';
+    document.getElementById('out-purpose').value = '';
+    document.getElementById('out-manager').value = '';
+    document.getElementById('out-note').value = '';
+    document.getElementById('stock-alert').classList.remove('show');
+  }
+}
+
+// ── Tab Switch ──────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('pane-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Toast ──────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── Excel Export ──────────────────────────────────────────
+function exportExcel(type) {
+  const wb = XLSX.utils.book_new();
+
+  if (type === 'all' || type === 'inventory') {
+    const data = [['품목명','현재재고','이달입고','이달출고']];
+    const monthInMap = {}, monthOutMap = {};
+    inboundLogs.forEach(l => { monthInMap[l.name] = (monthInMap[l.name]||0) + l.qty; });
+    outboundLogs.forEach(l => { monthOutMap[l.name] = (monthOutMap[l.name]||0) + l.qty; });
+    inventory.forEach(it => {
+      data.push([it.name, it.stock, monthInMap[it.name]||0, monthOutMap[it.name]||0]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch:20},{wch:10},{wch:10},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws, '판촉물현황');
+  }
+
+  if (type === 'all' || type === 'inbound') {
+    const data = [['입고일자','품목명','수량','단가(원)','담당자','비고']];
+    inboundLogs.forEach(l => data.push([l.date, l.name, l.qty, l.price||0, l.manager||'', l.note||'']));
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch:14},{wch:20},{wch:8},{wch:12},{wch:12},{wch:24}];
+    XLSX.utils.book_append_sheet(wb, ws, '입고대장');
+  }
+
+  if (type === 'all' || type === 'outbound') {
+    const data = [['출고일자','품목명','출고처','수령인','수량','목적','출고자','비고']];
+    outboundLogs.forEach(l => data.push([l.date, l.name, l.dest||'', l.recipient||'', l.qty, l.purpose||'', l.manager||'', l.note||'']));
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{wch:14},{wch:20},{wch:16},{wch:14},{wch:8},{wch:16},{wch:12},{wch:24}];
+    XLSX.utils.book_append_sheet(wb, ws, '출고대장');
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const names = { all:'판촉물_입출고_대장', inbound:'입고대장', outbound:'출고대장' };
+  XLSX.writeFile(wb, `${names[type]}_${today}.xlsx`);
+  showToast('⬇ 엑셀 파일 다운로드 완료');
+}
+</script>
+</body>
+</html>
