@@ -680,7 +680,8 @@ function renderStats() {
   const monthIn    = inboundLogs.reduce((s,l) => s + l.qty, 0);
   const monthOut   = outboundLogs.reduce((s,l) => s + l.qty, 0);
   const totalStock = inventory.reduce((s,it) => s + it.stock, 0);
-  document.getElementById('s-total-items').textContent = inventory.length.toString();
+  const activeCount = inventory.filter(it => it.stock > 0).length;
+  document.getElementById('s-total-items').textContent = activeCount.toString();
   document.getElementById('s-month-in').textContent    = monthIn  > 0 ? '+' + monthIn.toLocaleString()  : '0';
   document.getElementById('s-month-out').textContent   = monthOut > 0 ? '-' + monthOut.toLocaleString() : '0';
   document.getElementById('s-remaining').textContent   = totalStock.toLocaleString();
