@@ -60,13 +60,18 @@ body {
 .header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: env(safe-area-inset-top) 24px 0;
-  position: sticky; top: env(safe-area-inset-top); z-index: 100;
+  padding: 0 24px;
+  padding-top: max(env(safe-area-inset-top), 16px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 .header-inner {
   max-width: 960px; margin: 0 auto;
   display: flex; align-items: center; gap: 16px;
   height: 58px;
+  padding-top: env(safe-area-inset-top);
+  margin-top: env(safe-area-inset-top);
 }
 .logo {
   display: flex; align-items: center; gap: 10px;
@@ -306,7 +311,7 @@ body {
 }
 </style>
 </head>
-<body>
+<body style="padding-top: env(safe-area-inset-top);">
 
 <!-- Header -->
 <header class="header">
