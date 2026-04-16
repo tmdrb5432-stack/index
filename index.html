@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="판촉물 대장" />
 <meta name="theme-color" content="#1D9E75" />
 <link rel="apple-touch-icon" href="icon-192.png" />
@@ -45,7 +45,11 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
 }
 
-html { font-size: 15px; }
+html {
+  font-size: 15px;
+  padding-top: env(safe-area-inset-top);
+  background: var(--surface);
+}
 body {
   font-family: var(--font);
   background: var(--bg);
