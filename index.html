@@ -477,7 +477,7 @@ body {
           <tr>
             <th>입고일자</th><th>품목명</th>
             <th class="r">수량</th><th class="r">단가 (원)</th>
-            <th>담당자</th><th>비고</th><th class="c">삭제</th>
+            <th>담당자</th><th>비고</th><th class="c">수정/삭제</th>
           </tr>
         </thead>
         <tbody id="inbound-tbody"></tbody>
@@ -562,14 +562,101 @@ body {
         <thead>
           <tr>
             <th>출고일자</th><th>품목명</th><th>출고처</th><th>수령인</th>
-            <th class="r">수량</th><th>목적</th><th>출고자</th><th>비고</th><th class="c">삭제</th>
+            <th class="r">수량</th><th>목적</th><th>출고자</th><th>비고</th><th class="c">수정/삭제</th>
           </tr>
         </thead>
         <tbody id="outbound-tbody"></tbody>
       </table>
     </div>
   </div>
-
+<div id="edit-modal" class="modal-backdrop" onclick="closeEditModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="edit-modal-title">✏️ 내역 수정</div>
+    <div id="edit-in-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">입고일자 *</label>
+          <input class="form-input" type="date" id="edit-in-date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">품목명 *</label>
+          <input class="form-input" type="text" id="edit-in-item" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">입고 수량 *</label>
+          <input class="form-input" type="number" id="edit-in-qty" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">단가 (원)</label>
+          <input class="form-input" type="number" id="edit-in-price" min="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">담당자</label>
+          <input class="form-input" type="text" id="edit-in-manager" />
+        </div>
+        <div class="form-group span3">
+          <label class="form-label">비고</label>
+          <input class="form-input" type="text" id="edit-in-note" />
+        </div>
+      </div>
+    </div>
+    <div id="edit-out-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">출고일자 *</label>
+          <input class="form-input" type="date" id="edit-out-date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">품목명 *</label>
+          <input class="form-input" type="text" id="edit-out-item" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고 수량 *</label>
+          <input class="form-input" type="number" id="edit-out-qty" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고처</label>
+          <input class="form-input" type="text" id="edit-out-dest" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">수령인</label>
+          <input class="form-input" type="text" id="edit-out-recipient" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고 목적</label>
+          <select class="form-select" id="edit-out-purpose">
+            <option value="">선택하세요</option>
+            <option>고객 제공</option>
+            <option>행사/이벤트 제공</option>
+            <option>기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">출고자</label>
+          <select class="form-select" id="edit-out-manager">
+            <option value="">선택하세요</option>
+            <option>이상윤</option>
+            <option>임영택</option>
+            <option>전성민</option>
+            <option>강소연</option>
+            <option>류승백</option>
+            <option>이정환</option>
+            <option>전승규</option>
+            <option>정예진</option>
+          </select>
+        </div>
+        <div class="form-group span3">
+          <label class="form-label">비고</label>
+          <input class="form-input" type="text" id="edit-out-note" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeEditModal()">취소</button>
+      <button class="btn btn-accent" onclick="saveEdit()">저장</button>
+    </div>
+  </div>
+</div>
 </main>
 
 <div id="toast"></div>
@@ -775,7 +862,7 @@ function renderInbound() {
       <td class="r mono">${l.price ? l.price.toLocaleString() : '-'}</td>
       <td>${l.manager||'-'}</td>
       <td style="color:var(--text-muted)">${l.note||'-'}</td>
-      <td class="c"><button class="btn-del" onclick="deleteInbound(${realIdx})">삭제</button></td>
+<td class="c" style="white-space:nowrap"><button class="btn-edit" onclick="openEditModal('in',${realIdx})">수정</button><button class="btn-del" onclick="deleteInbound(${realIdx})">삭제</button></td>
     </tr>`;
   }).join('');
 }
@@ -798,11 +885,85 @@ function renderOutbound() {
       <td>${l.purpose||'-'}</td>
       <td>${l.manager||'-'}</td>
       <td style="color:var(--text-muted)">${l.note||'-'}</td>
-      <td class="c"><button class="btn-del" onclick="deleteOutbound(${realIdx})">삭제</button></td>
+      <td class="c" style="white-space:nowrap"><button class="btn-edit" onclick="openEditModal('out',${realIdx})">수정</button><button class="btn-del" onclick="deleteOutbound(${realIdx})">삭제</button></td>
     </tr>`;
   }).join('');
 }
+// ── Edit Modal ───────────────────────────────────────────────
+let editMode = null;
+let editIdx  = null;
 
+function openEditModal(type, idx) {
+  editMode = type;
+  editIdx  = idx;
+  const inForm  = document.getElementById('edit-in-form');
+  const outForm = document.getElementById('edit-out-form');
+  if (type === 'in') {
+    const l = inboundLogs[idx];
+    document.getElementById('edit-modal-title').textContent = '✏️ 입고 내역 수정';
+    inForm.style.display  = '';
+    outForm.style.display = 'none';
+    document.getElementById('edit-in-date').value    = l.date;
+    document.getElementById('edit-in-item').value    = l.name;
+    document.getElementById('edit-in-qty').value     = l.qty;
+    document.getElementById('edit-in-price').value   = l.price || '';
+    document.getElementById('edit-in-manager').value = l.manager || '';
+    document.getElementById('edit-in-note').value    = l.note || '';
+  } else {
+    const l = outboundLogs[idx];
+    document.getElementById('edit-modal-title').textContent = '✏️ 출고 내역 수정';
+    inForm.style.display  = 'none';
+    outForm.style.display = '';
+    document.getElementById('edit-out-date').value      = l.date;
+    document.getElementById('edit-out-item').value      = l.name;
+    document.getElementById('edit-out-qty').value       = l.qty;
+    document.getElementById('edit-out-dest').value      = l.dest || '';
+    document.getElementById('edit-out-recipient').value = l.recipient || '';
+    document.getElementById('edit-out-note').value      = l.note || '';
+    document.getElementById('edit-out-purpose').value   = l.purpose || '';
+    document.getElementById('edit-out-manager').value   = l.manager || '';
+  }
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal(e) {
+  if (e && e.target !== document.getElementById('edit-modal')) return;
+  document.getElementById('edit-modal').classList.remove('open');
+}
+
+function saveEdit() {
+  if (editMode === 'in') {
+    const date    = document.getElementById('edit-in-date').value;
+    const name    = document.getElementById('edit-in-item').value.trim();
+    const qty     = parseInt(document.getElementById('edit-in-qty').value);
+    const price   = parseInt(document.getElementById('edit-in-price').value) || 0;
+    const manager = document.getElementById('edit-in-manager').value.trim();
+    const note    = document.getElementById('edit-in-note').value.trim();
+    if (!date || !name || !qty) { showToast('⚠ 필수 항목을 입력해주세요.'); return; }
+    const old  = inboundLogs[editIdx];
+    const item = inventory.find(it => it.name === old.name);
+    if (item) { item.stock -= old.qty; item.stock += qty; }
+    inboundLogs[editIdx] = { date, name, qty, price, manager, note };
+  } else {
+    const date      = document.getElementById('edit-out-date').value;
+    const name      = document.getElementById('edit-out-item').value.trim();
+    const qty       = parseInt(document.getElementById('edit-out-qty').value);
+    const dest      = document.getElementById('edit-out-dest').value.trim();
+    const recipient = document.getElementById('edit-out-recipient').value.trim();
+    const purpose   = document.getElementById('edit-out-purpose').value;
+    const manager   = document.getElementById('edit-out-manager').value;
+    const note      = document.getElementById('edit-out-note').value.trim();
+    if (!date || !name || !qty) { showToast('⚠ 필수 항목을 입력해주세요.'); return; }
+    const old  = outboundLogs[editIdx];
+    const item = inventory.find(it => it.name === old.name);
+    if (item) { item.stock += old.qty; item.stock -= qty; }
+    outboundLogs[editIdx] = { date, name, qty, dest, recipient, purpose, manager, note };
+  }
+  saveData();
+  renderAll();
+  document.getElementById('edit-modal').classList.remove('open');
+  showToast('✓ 수정이 완료되었습니다.');
+}
 // ── Out item select ────────────────────────────────────────────
 function populateOutItems() {
   const sel = document.getElementById('out-item');
@@ -1135,7 +1296,37 @@ body {
   font-family: var(--font); transition: all 0.15s; white-space: nowrap;
 }
 .btn-del:hover { background: #F7C1C1; }
-
+.btn-edit {
+  padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--accent); color: var(--accent);
+  background: transparent; cursor: pointer; transition: all 0.15s;
+  margin-right: 4px; font-family: var(--font); white-space: nowrap;
+}
+.btn-edit:hover { background: var(--accent-light); }
+.modal-backdrop {
+  display: none; position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.45); align-items: center; justify-content: center;
+  padding: 16px;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 16px;
+  width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
+  padding: 28px 24px 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  animation: modal-in 0.18s ease;
+}
+@keyframes modal-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.modal-title {
+  font-size: 17px; font-weight: 700; color: var(--text);
+  margin-bottom: 20px;
+}
+.modal-actions {
+  display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;
+}
+  
 /* ─── Table ─── */
 .table-wrap {
   background: var(--surface); border: 1px solid var(--border);
