@@ -1047,7 +1047,13 @@ async function deleteInbound(idx) {
   const log = inboundLogs[idx];
   if (!confirm(`입고 내역을 삭제하시겠습니까?\n\n품목: ${log.name}\n수량: +${log.qty}\n날짜: ${log.date}\n\n※ 재고에서 차감됩니다.`)) return;
   const item = inventory.find(it => it.name === log.name);
-  if (item) item.stock -= log.qty;
+  if (item) {
+    item.stock -= log.qty;
+    if (item.stock <= 0) {
+      const invIdx = inventory.indexOf(item);
+      inventory.splice(invIdx, 1);
+    }
+  }
   inboundLogs.splice(idx, 1);
   renderAll();
   showToast('입고 내역이 삭제되었습니다.');
