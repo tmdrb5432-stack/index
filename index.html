@@ -96,6 +96,15 @@ body {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 0 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tab-nav::-webkit-scrollbar { display: none; }
+.tab-nav-inner {
+  max-width: 960px; margin: 0 auto;
+  display: flex; gap: 2px;
+  min-width: max-content;
 }
 .tab-nav-inner {
   max-width: 960px; margin: 0 auto;
@@ -300,7 +309,7 @@ body {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .form-grid { grid-template-columns: 1fr 1fr; }
   .form-group.span3 { grid-column: span 2; }
-  .tab-btn { padding: 12px 14px; font-size: 13px; }
+  .tab-btn { padding: 12px 14px; font-size: 12px; }
   .tab-btn .tab-icon { display: none; }
   .header-sub { display: none; }
   .data-table { font-size: 13px; }
@@ -592,7 +601,7 @@ body {
         <thead>
           <tr>
             <th>출고일자</th><th>품목명</th><th>출고처</th><th>수령인</th>
-            <th class="r">수량</th><th>목적</th><th>출고자</th><th>비고</th><th class="c">수정/삭제</th>
+            <th class="r">수량</th><th>목적</th><th style="min-width:90px">출고자</th><th style="min-width:60px;max-width:120px">비고</th><th class="c">수정/삭제</th>
           </tr>
         </thead>
         <tbody id="outbound-tbody"></tbody>
