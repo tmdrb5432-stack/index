@@ -877,14 +877,14 @@ function renderRecentLogs() {
 }
 
 // ── Inbound Table ──────────────────────────────────────────────
-function renderInbound() {
+  function renderInbound() {
   const tbody = document.getElementById('inbound-tbody');
   if (!inboundLogs.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="7">입고 내역이 없습니다.</td></tr>'; return;
   }
-  const reversed = [...inboundLogs].reverse();
-  tbody.innerHTML = reversed.map((l, ri) => {
-    const realIdx = inboundLogs.length - 1 - ri;
+  const indexed = inboundLogs.map((l, i) => ({ l, i }));
+  indexed.sort((a, b) => b.l.date.localeCompare(a.l.date));
+  tbody.innerHTML = indexed.map(({ l, i: realIdx }) => {
     return `<tr>
       <td class="mono">${l.date}</td>
       <td><strong>${l.name}</strong></td>
@@ -903,9 +903,9 @@ function renderOutbound() {
   if (!outboundLogs.length) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="9">출고 내역이 없습니다.</td></tr>'; return;
   }
-  const reversed = [...outboundLogs].reverse();
-  tbody.innerHTML = reversed.map((l, ri) => {
-    const realIdx = outboundLogs.length - 1 - ri;
+  const indexed = outboundLogs.map((l, i) => ({ l, i }));
+  indexed.sort((a, b) => b.l.date.localeCompare(a.l.date));
+  tbody.innerHTML = indexed.map(({ l, i: realIdx }) => {
     return `<tr>
       <td class="mono">${l.date}</td>
       <td><strong>${l.name}</strong></td>
