@@ -931,7 +931,7 @@ function closeEditModal(e) {
   document.getElementById('edit-modal').classList.remove('open');
 }
 
-function saveEdit() {
+async function saveEdit() {
   if (editMode === 'in') {
     const date    = document.getElementById('edit-in-date').value;
     const name    = document.getElementById('edit-in-item').value.trim();
@@ -959,10 +959,10 @@ function saveEdit() {
     if (item) { item.stock += old.qty; item.stock -= qty; }
     outboundLogs[editIdx] = { date, name, qty, dest, recipient, purpose, manager, note };
   }
-  saveData();
   renderAll();
   document.getElementById('edit-modal').classList.remove('open');
   showToast('✓ 수정이 완료되었습니다.');
+  await saveToBin();
 }
 // ── Out item select ────────────────────────────────────────────
 function populateOutItems() {
